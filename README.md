@@ -7,6 +7,8 @@ It's a python program, and the module `pygame` is required so that you can here 
 
 ## Usage
 
+This file itself is also the manual.
+
 The basic class in the module `music`is `Note`. Then comes the `Chord`.
 Here are some functions you can use easily.
 
