@@ -37,12 +37,13 @@ def main():
             chord = music.Chord(chord)
             chord.connect_to(lastchord)
             lastchord = chord
-            ps.play(chord, interval=0.04, duration = 0.2)
+            ps.play(chord, interval=0.1, duration = 0.2)
         except Exception as e:
             print(e)
 
 
 
 if __name__ == "__main__":
-    c1 = music.Chord('F13')
-    ps.play(c1, interval=0.15)
+    #c1 = music.Chord('F13')
+    #ps.play(c1, interval=0.15)
+    main()
