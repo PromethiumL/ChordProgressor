@@ -1,4 +1,4 @@
-# Chord Progresser
+# Chord Progressor
 A simple musical program to connect the chords, and play the progression instantly.
 
 ## Requirements
