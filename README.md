@@ -3,7 +3,7 @@ A simple musical program to connect the chords, and play the progression instant
 
 ## Requirements
 
-It's a python program, and the module `pygame` is required so that you can here the chords played. 
+It's a python program, and the module `pygame` is required so that you can hear the chords played. 
 
 ## Usage
 
@@ -54,8 +54,8 @@ ps.play([c, c2], interval=0.1, duration=1) # Play the chords. 1s for each chord.
 
 ```
 
-You can add your own chord type in the file 'music.py'. Just by giving the interval (note  interval) in the dict.
+You can add your own chord types in the file 'music.py', just by giving the interval (note  interval) in the dict.
 
 ## Known issues
 
-Here are also some unexpected problems when connecting the chords. Improving the algorithm.
+There are also some unexpected problems when connecting the chords. Improving the algorithm.
