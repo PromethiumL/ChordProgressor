@@ -1,9 +1,11 @@
 import copy
-import playsound
+import playsound as ps
+import pprint
 
 _first_C_offset = 3
 _highlimit = 87
 
+global _standard_position_chord
 _notename_to_int = {
     'C': 0,
     'C#': 1,
@@ -94,11 +96,13 @@ _interval_to_offset = {
 }
 
 _chord_to_interval = {
-    'maj': ['M3', 'P5'],
+    'maj': ['M3', 'P5', 'P8'],
 
     'min': ['m3', 'P5'],
     'm': ['m3', 'P5'],
     '-': ['m3', 'P5'],
+
+    '(b5)' : ['M3', 'd5'],
 
     'aug': ['M3', 'A5'],
     '+': ['M3', 'A5'],
@@ -118,19 +122,29 @@ _chord_to_interval = {
 
     '7': ['M3', 'P5', 'm7'],
 
+#    '7alt': ['M3', 'd5', 'm7'],    ambigious
     '7b5': ['M3', 'd5', 'm7'],
     '7-5': ['M3', 'd5', 'm7'],
-    '7alt': ['M3', 'd5', 'm7'],
+    '7#5': ['M3', 'A5', 'm7'],
+    '7b5b9': ['M3', 'd5', 'm7', 'm9'],
+    '7b5#9': ['M3', 'd5', 'm7', 'A9'],
+    'm7-5': ['m3', 'd5', 'm7'],
+    'm7b5': ['m3', 'd5', 'm7'],
+    'm7b5b9': ['m3', 'd5', 'm7', 'm9'],
+    'm7b5#9': ['m3', 'd5', 'm7', 'A9'],
 
     'maj7': ['M3', 'P5', 'M7'],
+    'maj7-5': ['M3', 'd5', 'M7'],
+    'maj7b5': ['M3', 'd5', 'M7'],
+    'maj7#5': ['M3', 'A5', 'M7'],
+
     'M7': ['M3', 'P5', 'M7'],
-    'd': ['M3', 'P5', 'M7'],
+    'M7-5': ['M3', 'd5', 'M7'],
+    'M7b5': ['M3', 'd5', 'M7'],
+    'M7#5': ['M3', 'A5', 'M7'],
 
     'm7': ['m3', 'P5', 'm7'],
     '-7': ['m3', 'P5', 'm7'],
-
-    'm7-5': ['m3', 'd5', 'm7'],
-    'm7b5': ['m3', 'd5', 'm7'],
 
     'dim7': ['m3', 'd5', 'd7'],
     'o7': ['m3', 'd5', 'd7'],
@@ -138,6 +152,7 @@ _chord_to_interval = {
     '+7': ['M3', 'A5', 'M7'],
     'aug7': ['M3', 'A5', 'M7'],
 
+    '7sus2': ['M2', 'P5', 'm7'],
     '7sus4': ['P4', 'P5', 'm7'],
 
     'mM7': ['m3', 'P5', 'M7'],
@@ -148,8 +163,9 @@ _chord_to_interval = {
     '7b9#5': ['M3', 'A5', 'm7', 'm9'],
     '7#9#5': ['M3', 'A5', 'm7', 'A9'],
     
-    '-9': ['M3', 'P5', 'm7', 'm9'],
-    'b9': ['M3', 'P5', 'm7', 'm9'],
+    '(-9)': ['M3', 'P5', 'm9'],
+    '(b9)': ['M3', 'P5', 'm9'],
+    '(#9)': ['M3', 'P5', 'A9'],
 
     '9': ['M3', 'P5', 'm7', 'M9'],
 
@@ -158,6 +174,7 @@ _chord_to_interval = {
     'm9': ['m3', 'P5', 'm7', 'M9'],
 
     'add9': ['M3', 'P5', 'M9'],
+    '(9)': ['M3', 'P5', 'M9'],
 
     'madd9': ['m3', 'P5', 'M9'],
 
@@ -171,16 +188,16 @@ _chord_to_interval = {
     '-11': ['m3', 'P5', 'm7', 'M9', 'P11'],
 
     'mb11': ['m3', 'P5', 'm7', 'd11'],
-    'mb11': ['m3', 'P5', 'm7', 'd11'],
+    'm(b11)': ['m3', 'P5', 'm7', 'd11'],
 
 
-    '13': ['M3', 'P5', 'M6', 'm7', 'M9', 'A11'],
+    '13': ['M3', 'P5',  'm7', 'M9', 'M13'],
 
-    'm13': ['m3', 'P5', 'M6', 'm7', 'M9', 'A11'],
+    'm13': ['m3', 'P5',  'm7', 'M9', 'P11', 'M13'],
 
-    'maj13': ['M3', 'P5', 'M6', 'M7', 'M9', 'A11'],
+    'maj13': ['M3', 'P5',  'M7', 'M9', 'A11'],
 
-    'add13': ['M3', 'P5', 'M6'],
+    'add13': ['M3', 'P5', 'M13']
 }
 
 _modetable = {
@@ -274,9 +291,12 @@ class Note:
         return
 
     def check_index(self):
-        if not self.index in range(_highlimit):
-            raise Exception('Note index out of range : {}'.format(self.index))
-        return
+        try:
+            if not self.index in range(_highlimit):
+                raise Exception('Note index out of range : {}'.format(self.index))
+            return
+        except Exception, e:
+            self.index = self.index - 24
 
     def show_info(self):
         print("Note: name : {}, index: {},  octave: {}, flag : {}"
@@ -318,7 +338,7 @@ class Chord:
             self.root = Note(name)
             self.type = 'maj'
             self.name = self.root.name
-            self.base = _chord_to_interval[self.type]
+            self.base = _chord_to_interval[self.type]       # base is an array of intervals.
             self.construct()
         else:
             if len(name) < 1:
@@ -343,30 +363,82 @@ class Chord:
                 raise Exception(nstr)
 
             self.construct()
-            self.expand()
+#            self.expand()
             return
 
     def construct(self):
-        lower = copy.copy(self.root)
+        lower = copy.deepcopy(self.root)
         lower.down()
 
         self.notes = []
         self.notes.append(lower)
-        self.notes.append(self.root)
+        self.notes.append(self.root)        # These are the two root notes.
 
         for n in self.base:
-            newnote = copy.copy(self.root)
-            newnote.inc(n)
+            newnote = copy.deepcopy(self.root)
+            newnote.inc(_interval_to_offset[n]) # construct chord notes
+            self.notes.sort()
             self.notes.append(newnote)
 
-        self.base = self.notes[1:]
+        self.base = self.notes[1:]          # Now base is an array of notes.
 
         return
+
+    def unique(self):
+        arr = []
+        for note in self.notes:
+            exist = False
+            for n in arr:
+                if note.index == n.index:
+                    exist = True
+            if not exist:
+                arr.append(note)
+        arr.sort()
+        self.notes = arr
 
     def show_info(self):
         print('name : {}, root : {}, type: {}'.format(
             self.name, self.root.name, self.type))
         print('\tNote list : {}'.format(map(lambda x: x.name, self.notes)))
+
+    def invert_up(self):
+        bot = self.base[0]
+        base = self.base[1:]
+        bot.up()
+        self.base.append(bot)
+        self.base.sort()
+        self.unique()
+    
+    def drops_1(self):
+        self.notes[-1].down()
+        self.unique()
+
+    def drops_2(self):
+        self.notes[-2].down()
+        self.unique()
+
+    def drops_3(self):
+        if len(self.notes) < 5:
+            self.drops_2()
+        else:
+            self.notes[-3].down()
+            self.unique()
+
+    def drops_2_3(self):
+        if len(self.notes) < 5:
+            self.drops_2()
+        else:
+            self.notes[-2].down()
+            self.notes[-3].down()
+            self.unique()
+
+    def drops_2_4(self):
+        if len(self.notes) < 6:
+            self.drops_2_3()
+        else:
+            self.notes[-2].down()
+            self.notes[-4].down()
+            self.unique()
 
     def expand(self, gap=5):  # gap 5 means M3
         """ 
@@ -376,12 +448,11 @@ class Chord:
         '''
         for i in range(len(self.notes)):
             if i > 2:
-                newnote=copy.copy(self.notes[i])
+                newnote=copy.deepcopy(self.notes[i])
                 newnote.up()
                 self.notes.append(newnote)
         '''
         self.notes.sort()
-
         global _highlimit
         _highlimit = 65
 
@@ -449,88 +520,151 @@ class Chord:
             if oct < 0:
                 note.dec((0 - oct) * 12)
         self.notes.sort()
-        if (self.notes[-1].index - self.notes[1].index) < 40:
-            self.expand()
+#        if (self.notes[-1].index - self.notes[1].index) < 40:
+#            self.expand()
 
         return
 
     def get_note_list(self):
         return map(lambda x: x, self.notes)
 
-    def connect_to(self, other):
-        if not isinstance(other, Chord):
-            raise Exception("\'{}\'' is not a chord.".format(other))
-        l = other.get_note_list()
-        base = map(lambda x:x.index, self.base)
-        #print base
-        '''connect the ROOT first. '''
+    #def connect_to(self, other):
+    #    if not isinstance(other, Chord):
+    #        raise Exception("\'{}\'' is not a chord.".format(other))
+    #    l = other.get_note_list()
+    #    base = map(lambda x:x.index, self.base)
+    #    #print base
+    #    '''connect the ROOT first. '''
 
-        self.notes = []
-        self.notes.append(
-            Note(
-                self.root.name,
-                octave=min([
-                    (abs(l[0].index - self.root.index), 1), 
-                    (abs(l[1].index - self.root.index), 2)
-                    #(999, 0)
-                ])[1]
+    #    self.notes = []
+    #    self.notes.append(
+    #        Note(
+    #            self.root.name,
+    #            octave=min([
+    #                (abs(l[0].index - self.root.index), 1), 
+    #                (abs(l[1].index - self.root.index), 2)
+    #                #(999, 0)
+    #            ])[1]
+    #        )
+    #    )
+
+    #    # note2 = copy.deepcopy(self.notes[0])
+    #    # note2.up()
+    #    # self.notes.append(note2)
+
+    #    '''connect the rest notes'''
+
+    #    def getoct(x):
+    #        return (x + 8) // 12 - 1
+
+    #    for note in l[1:]:
+
+    #        # playsound.play(note, duration=1)
+
+
+    #        q = []
+    #        index, octave = note.index, note.octave
+    #        for i in range(index - 10, index + 5):
+    #            #print 'i = {}, '.format(i), map(_have_same_name, base, [i]*len(base))
+    #            if True in map(_have_same_name, base, [i]*len(base)):
+    #                q.append((abs(i - index), i))
+
+    #        #print q
+
+    #        # plst = []
+    #        # for tp in q:
+    #        #     plst.append(Note(index=tp[1]))
+    #        # playsound.play(plst, interval=0.1, duration=1)
+    #        
+
+    #        ans = min(q)
+    #        q.remove(ans)
+    #        #print ans
+    #        #print 
+    #        if ans[1] == self.notes[-1].index:
+    #            #print 'repetion detected'
+    #            while len(q) > 1 and q[0][1] <= ans[1]:
+    #                q = q[1:]
+    #            ans = q[0]
+
+    #        newnote = Note(index=ans[1])
+
+    #        # playsound.play(newnote, duration = 2)
+    #        
+    #        self.notes.append(newnote)
+    #        #print 'Now notes are {}'.format(map(lambda x:x.index, self.notes))
+    #        del q
+    #        self.notes.sort()
+    #    
+    #    if self.notes[0].index > self.notes[1].index:
+    #        self.notes[0].down()
+
+    
+    def connect_to(self, target):
+        """This new algorithm tries to pick up the best from the generated voicings."""
+        def f(chord, target):
+            """ The f(x) to minimize"""
+            return chord_dist(chord, target) + chord_dist(chord, _standard_position_chord)
+
+        arr = []
+        chord = copy.deepcopy(self)
+
+        for i in range(len(self.base)*2):
+            current_inversion = copy.deepcopy(chord)
+            newchord = copy.deepcopy(current_inversion)
+            newchord.drops_2()
+            arr.append(
+                    (f(newchord, target), newchord)
             )
-        )
 
-        # note2 = copy.copy(self.notes[0])
-        # note2.up()
-        # self.notes.append(note2)
+            newchord = copy.deepcopy(current_inversion)
+            newchord.drops_3()
+            arr.append(
+                    (f(newchord, target), newchord)
+            )
 
-        '''connect the rest notes'''
+            newchord = copy.deepcopy(current_inversion)
+            newchord.drops_2_3()
+            arr.append(
+                    (f(newchord, target), newchord)
+            )
 
-        def getoct(x):
-            return (x + 8) // 12 - 1
+            newchord = copy.deepcopy(current_inversion)
+            newchord.drops_2_4()
+            arr.append(
+                    (f(newchord, target), newchord)
+            )
 
-        for note in l[1:]:
-
-            # playsound.play(note, duration=1)
-
-
-            q = []
-            index, octave = note.index, note.octave
-            for i in range(index - 10, index + 5):
-                #print 'i = {}, '.format(i), map(_have_same_name, base, [i]*len(base))
-                if True in map(_have_same_name, base, [i]*len(base)):
-                    q.append((abs(i - index), i))
-
-            #print q
-
-            # plst = []
-            # for tp in q:
-            #     plst.append(Note(index=tp[1]));
-            # playsound.play(plst, interval=0.1, duration=1)
-            
-
-            ans = min(q)
-            q.remove(ans)
-            #print ans
-            #print 
-            if ans[1] == self.notes[-1].index:
-                #print 'repetion detected'
-                while len(q) > 1 and q[0][1] <= ans[1]:
-                    q = q[1:]
-                ans = q[0]
-
-            newnote = Note(index=ans[1])
-
-            # playsound.play(newnote, duration = 2)
-            
-            self.notes.append(newnote)
-            #print 'Now notes are {}'.format(map(lambda x:x.index, self.notes))
-            del q
-            self.notes.sort()
+            del current_inversion
+            chord.invert_up()
         
-        if self.notes[0].index > self.notes[1].index:
-            self.notes[0].down()
+        # Select the best one.
+        arr = list(set(arr)) 
+        arr.sort()
+        # pprint.pprint(arr)
 
+        # for cp in arr:
+        #     d, c = cp
+        #     print('f = {}'.format(d))
+        #     ps.play(c, interval=0.05, duration=0.5)
 
+        self.notes = copy.deepcopy(arr[0][1].notes)
 
+        del arr
+        return
 
+def chord_dist(c1, c2):
+    """ c1 and c2 are Chord type"""
+    if not (isinstance(c1, Chord) and isinstance(c2, Chord)):
+        raise str("not chords")
+        return
+    d = (c1.notes[1].index - c2.notes[1].index) ** 2 + \
+        (c1.notes[-1].index - c2.notes[-1].index) ** 2 +\
+        (c1.notes[2].index - c2.notes[2].index) ** 2 + \
+        (c1.notes[-2].index - c2.notes[-2].index) ** 2 +   \
+        (c1.notes[3].index - c2.notes[3].index) ** 2 +   \
+        (c1.notes[-3].index - c2.notes[-3].index) ** 2    
+    return d
 
 
 def gen_mode(tonic, name='Ionion'):
@@ -553,11 +687,23 @@ def gen_mode(tonic, name='Ionion'):
 
 
 def main():
-    n = Note(index=36)
-    n.show_info()
+   # n = Note(index=36)
+   # n.show_info()
+    c = Chord('D')
+    c.show_info()
+    c2 = Chord('G7')
+    c2.show_info()
+
+    c2.connect_to(c)
+    c2.show_info()
 
 if __name__ == '__main__':
     main()
 
-if __name__ == '__note__':
+if __name__ == 'music':
     print("Module \'music\'' loaded.")
+    _standard_position_chord = Chord('Cmaj7')
+    _standard_position_chord.expand()
+    for note in _standard_position_chord.notes[1:]:
+        note.up()
+    _standard_position_chord.show_info()

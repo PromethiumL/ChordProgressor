@@ -24,13 +24,13 @@ def randomlyplaywithconnection():
         ch = random.choice(l)
         ch.connect_to(lastchord)
         ch.show_info()
-        for i in range(4):
+        for i in range(1):
             ps.play(ch ,interval=0, duration=1)
         lastchord = ch
 
 def main():
     lastchord = music.Chord('Cmaj7')
-
+    lastchord.expand()
     while 1:
         try:
             chord = raw_input('> ')
@@ -41,9 +41,28 @@ def main():
         except Exception as e:
             print(e)
 
+def progress_with_connection():
+    arr = [
+        'Cm7', 'Cm7', 'Cm7', 'Cm7', 'Cm7', 'Cm7', 'Cm7', 'Cm7',
+        'Fm7', 'Fm7', 'Fm7', 'Fm7', 'Fm7', 'Fm7', 'Fm7', 'Fm7', 
+        'Dm7-5', 'Dm7-5', 'Dm7-5', 'Dm7-5', 'G7#5', 'G7#5', 'G7#5', 'G7#5', 
+        'Cm7', 'Cm7', 'Cm7', 'Cm7', 'Cm7', 'Cm7', 'Cm7', 'Cm7',
+
+        'Ebm7', 'Ebm7', 'Ebm7', 'Ebm7', 'Ab9', 'Ab9', 'Ab9', 'Ab9', 
+        'DbM7', 'DbM7', 'DbM7', 'DbM7', 'DbM7', 'DbM7', 'DbM7', 'DbM7', 
+        'Dm7-5', 'Dm7-5', 'Dm7-5', 'Dm7-5', 'G7#5', 'G7#5', 'G7#5', 'G7#5', 
+        'Cm7', 'Cm7', 'Cm7', 'Cm7', 'Cm7', 'Cm7', 'G7b9', 'G7b9',
+    ]
+    arr*= 5
+    lastchord = music.Chord('Cmaj7')
+    for name in arr:
+        c = music.Chord(name)
+        c.connect_to(lastchord)
+        c.show_info()
+        lastchord = c
+        ps.play(c, interval=0, duration=0.6)
+
 
 
 if __name__ == "__main__":
-    #c1 = music.Chord('F13')
-    #ps.play(c1, interval=0.15)
-    main()
+    progress_with_connection()

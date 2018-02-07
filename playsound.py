@@ -43,6 +43,7 @@ def play(notes, interval=0, duration=5):
             arr = [notes]
 
     for i in arr:
+        #print('i = {}'.format(i))
         filename = './sounds/{}.wav'.format(i + 1)
         # print('playing \'' + filename + '\'...')
         queue.append(pg.mixer.Sound(filename))
