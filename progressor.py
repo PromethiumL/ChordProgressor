@@ -1,77 +1,64 @@
-#!/usr/bin/python
-
-import sys
-import playsound as ps
-import time
-import copy
-import music
+from chord import Chord
+from sound_engine import SoundEngine
+from pygame_output import PyGameOutput
 import random
 
-
-# arr = ['Cmaj9','Am9', 'Dmaj11', 'D#o7', 'Em9', 'Do7', 'Ebmaj9', 'Dbmaj7']
-# arr = ['Ab9', 'Db13', 'Gb9', 'B13', 'E9', 'A13', 'Dmaj9', None]
-# arr = ['Dbmaj7', 'Dbm7', 'Cm7', 'Go7', 'Bbm7', 'Eb7', 'Abmaj7', None]
-# arr = ['Bmaj7', 'D7', 'Gmaj7', 'Bb7', 'Ebmaj7',None, 'Am7', 'D7','Gmaj7', 'Bb7', 'Ebmaj7', 'F#7', 'Bmaj7',None, 'C#m7', 'F#7']
+# Initialize the sound engine with PyGameOutput
+engine = SoundEngine(PyGameOutput())
 
 
-def randomlyplaywithconnection():
-    arr = ['Ebmaj7', 'Fm7', 'Fo7', 'G7', 'Abmaj7', 'Ab7', 'Gm', 'Bb7', 'Cm7', 'Do7', 'Dbmaj7']
-    lastchord = music.Chord('Ebmaj7')
-    l = []
-    for ch in arr:
-        l.append(music.Chord(ch))
+def play_random_connected_chords():
+    chord_names = 'Ebmaj7,Fm7,Fo7,G7,Abmaj7,Ab7,Gm,Bb7,Cm7,Do7,Dbmaj7'.split(',')
 
-    for i in range(200):
-        ch = random.choice(l)
-        ch.connect_to(lastchord)
-        ch.show_info()
-        for i in range(1):
-            ps.play(ch, interval=0.04, duration=1)
-        lastchord = ch
+    previous_chord = Chord(chord_names[0])
+    chord_list = []
+    for name in chord_names:
+        chord_list.append(Chord(name))
+
+    for _ in range(200):
+        current_chord = random.choice(chord_list)
+        current_chord.connect_to(previous_chord)
+        current_chord.show_info()
+        for _ in range(1):
+            engine.play(current_chord, interval=0.04, duration=1)
+        previous_chord = current_chord
 
 
-def main():
-    lastchord = music.Chord('Cmaj7')
-    lastchord.expand()
-    while 1:
+def read_chord_from_stdin_interactively():
+    current_chord = Chord('Cmaj7')
+    current_chord.expand()
+    while True:
         try:
-            chord = input('> ')
-            chord = music.Chord(chord)
-            chord.connect_to(lastchord)
-            lastchord = chord
-            ps.play(chord, interval=0.1, duration=0.2)
+            chord_input = input('> ')
+            new_chord = Chord(chord_input)
+            new_chord.connect_to(current_chord)
+            current_chord = new_chord
+            engine.play(new_chord, interval=0.1, duration=0.2)
         except Exception as e:
             print(e)
 
 
 def progress_with_connection():
-    # arr = [
-    #     'Cm7', 'Cm7', 'Cm7', 'Cm7', 'Cm7', 'Cm7', 'Cm7', 'Cm7',
-    #     'Fm7', 'Fm7', 'Fm7', 'Fm7', 'Fm7', 'Fm7', 'Fm7', 'Fm7',
-    #     'Dm7-5', 'Dm7-5', 'Dm7-5', 'Dm7-5', 'G7#5', 'G7#5', 'G7#5', 'G7#5',
-    #     'Cm7', 'Cm7', 'Cm7', 'Cm7', 'Cm7', 'Cm7', 'Cm7', 'Cm7',
-    #
-    #     'Ebm7', 'Ebm7', 'Ebm7', 'Ebm7', 'Ab9', 'Ab9', 'Ab9', 'Ab9',
-    #     'DbM7', 'DbM7', 'DbM7', 'DbM7', 'DbM7', 'DbM7', 'DbM7', 'DbM7',
-    #     'Dm7-5', 'Dm7-5', 'Dm7-5', 'Dm7-5', 'G7#5', 'G7#5', 'G7#5', 'G7#5',
-    #     'Cm7', 'Cm7', 'Cm7', 'Cm7', 'Cm7', 'Cm7', 'G7b9', 'G7b9',
-    # ]
-
-    arr = "Bmaj7,D7,Gmaj7,Bb7,Ebmaj7,Ebmaj7,Am7,D7," \
-          "Gmaj7,Bb7,Ebmaj7,Gb7,Bmaj7,Bmaj7,Fm7,Bb7," \
-          "Ebmaj7,Ebmaj7,Am7,D7," \
-          "Gmaj7,Gmaj7,Dbm7,Gb7," \
-          "Bmaj7,Bmaj7,Fm7,Bb7," \
-          "Ebmaj7,Ebmaj7,D7,D7".split(',')
-    arr *= 5
-    lastchord = music.Chord('Cmaj7')
-    for name in arr:
-        c = music.Chord(name)
-        c.connect_to(lastchord)
-        c.show_info()
-        lastchord = c
-        ps.play(c, interval=0, duration=0.6)
+    chord_sequence = (
+        # Giant steps
+        "Bmaj7,D7,Gmaj7,Bb7,Ebmaj7,Ebmaj7,Am7,D7,"
+        "Gmaj7,Bb7,Ebmaj7,Gb7,Bmaj7,Bmaj7,Fm7,Bb7,"
+        "Ebmaj7,Ebmaj7,Am7,D7,"
+        "Gmaj7,Gmaj7,Dbm7,Gb7,"
+        "Bmaj7,Bmaj7,Fm7,Bb7,"
+        "Ebmaj7,Ebmaj7,D7,D7".split(',')
+    )
+    chord_sequence *= 2
+    previous_chord = Chord(chord_sequence[0])
+    for name in chord_sequence:
+        current_chord = Chord(name)
+        current_chord.connect_to(previous_chord)
+        current_chord.show_info()
+        previous_chord = current_chord
+        engine.play(current_chord, interval=0.05, duration=0.5)
 
 
 if __name__ == "__main__":
-    randomlyplaywithconnection()
+    # progress_with_connection()
+    # play_random_connected_chords()
+    read_chord_from_stdin_interactively()
