@@ -1,4 +1,10 @@
 # Chord Progressor
+> NOTE: WIP refactorization: 
+> - README is not updated yet.
+> - Chord symbol parser needs to be replaced with an external one.
+> - Chord voicing expansion algorithm needs to be improved.
+> - Unused functions aren't fully removed yet.
+
 A simple musical program to connect the chords, and play the progression instantly.
 
 ## Requirements
@@ -7,7 +13,12 @@ It's a python program, and the module `pygame` is required so that you can hear 
 
 ## Usage
 
-This file itself is also the manual.
+Demo:
+
+```bash
+pip install -r requirements.txt  # pygame
+python progressor.py   # play the giant steps progression
+```
 
 The basic class in the module `music`is `Note`. Then comes the `Chord`.
 Here are some functions you can use easily.
@@ -25,18 +36,18 @@ n.show_info()		# Print note1's information
 
 ps.play(note1, duration=2)	# Play it
 
-n.inc()			# Make it one semitone higher
-n.inc(7)		# Make it a perfect fifth higher
-n.dec()			# One semitone lower
-n.dec(7)		# P5 lower
-n.up()			# 8va
-n.down()		# 8vb
+n.increment()			# Make it one semitone higher
+n.increment(7)		# Make it a perfect fifth higher
+n.decrement()			# One semitone Lower
+n.decrement(7)		# P5 lower
+n.move_by_one_octave_upward()			# 8va
+n.move_by_one_octave_downward()		# 8vb
 n.show_info()		# Show the details again
 
 # Chords
 
-c = music.Chord('Cmaj9') 	# Create a chord by name
-c2 = music.Chord('Dbmaj7')	# Another one
+c = music.Chord('C^9') 	# Create a chord by name
+c2 = music.Chord('Db^7')	# Another one
 
 c2.connect_to(c)		# Connect 'c2' to 'c' , in order to make the progression smooth
 

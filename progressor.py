@@ -59,6 +59,6 @@ def progress_with_connection():
 
 
 if __name__ == "__main__":
-    # progress_with_connection()
+    progress_with_connection()
     # play_random_connected_chords()
-    read_chord_from_stdin_interactively()
+    # read_chord_from_stdin_interactively()
